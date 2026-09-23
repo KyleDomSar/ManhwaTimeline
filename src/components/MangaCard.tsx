@@ -3,9 +3,10 @@ import {Pressable,StyleSheet,Text,View} from "react-native";
 import {colors,radius,spacing} from "../constants/theme";
 import {MangaCover} from "./MangaCover";
 import type {Manga} from "../types/models";
-type Props={manga:Manga;onPress?:()=>void};
-export const MangaCard=React.memo(function MangaCard({manga,onPress}:Props){
- return <Pressable onPress={onPress} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
+type Props={manga:Manga;onPressManga?:(manga:Manga)=>void};
+export const MangaCard=React.memo(function MangaCard({manga,onPressManga}:Props){
+ const handlePress=React.useCallback(()=>onPressManga?.(manga),[manga,onPressManga]);
+ return <Pressable onPress={handlePress} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
   <MangaCover uri={manga.coverUrl} style={styles.cover}/>
   <View style={styles.info}><Text numberOfLines={2} style={styles.title}>{manga.title}</Text>
    <View style={styles.badges}><Text style={styles.status}>{manga.status}</Text>{manga.year?<Text style={styles.meta}>{manga.year}</Text>:null}</View>
