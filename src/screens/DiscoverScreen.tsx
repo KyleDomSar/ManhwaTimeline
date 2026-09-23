@@ -94,6 +94,12 @@ export function DiscoverScreen({navigation}:Props){
 
  const keyExtractor=useCallback((item:Manga)=>item.id,[]);
 
+ const renderGenreItem=useCallback(({item}:{item:Tag})=>(
+  <Pressable onPress={()=>chooseGenre(item.id?item:undefined)} style={[styles.genreChip,(genre?.id===item.id||(item.id===""&&!genre))&&styles.active]}>
+   <Text style={styles.chipText}>{item.name}</Text>
+  </Pressable>
+ ),[chooseGenre,genre]);
+
  const handleRefresh=useCallback(()=>{
   void load(query,filter,genre,true);
  },[load,query,filter,genre]);
@@ -111,7 +117,7 @@ export function DiscoverScreen({navigation}:Props){
    <Text style={styles.filterLabel}>Sort & status</Text>
    <View style={styles.filters}>{filters.map(f=><Pressable key={f} onPress={()=>{setFilter(f);void load(query,f,genre)}} style={[styles.chip,filter===f&&styles.active]}><Text style={styles.chipText}>{f}</Text></Pressable>)}</View>
    <Text style={styles.filterLabel}>Genre</Text>
-   <FlatList horizontal data={[{id:"",name:"All"},...tags]} extraData={genre?.id} keyExtractor={x=>x.id||"all"} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.genreList} renderItem={({item})=><Pressable onPress={()=>chooseGenre(item.id?item:undefined)} style={[styles.genreChip,(genre?.id===item.id||(item.id===""&&!genre))&&styles.active]}><Text style={styles.chipText}>{item.name}</Text></Pressable>}/>
+   <FlatList horizontal data={[{id:"",name:"All"},...tags]} extraData={genre?.id} keyExtractor={x=>x.id||"all"} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.genreList} renderItem={renderGenreItem}/>
   </View>
   {error&&manga.length===0
    ?<View style={styles.center}><Text style={styles.error}>{error}</Text><Pressable onPress={()=>void load(query,filter,genre)} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View>
