@@ -83,9 +83,13 @@ export function DiscoverScreen({navigation}:Props){
   void load(query,filter,g);
  },[load,query,filter]);
 
+ const handleMangaPress=useCallback((selected:Manga)=>{
+  navigation.navigate("MangaDetail",{manga:selected});
+ },[navigation]);
+
  const renderMangaItem=useCallback(({item}:{item:Manga})=>(
-  <MangaCard manga={item} onPressManga={(selected)=>navigation.navigate("MangaDetail",{manga:selected})}/>
- ),[navigation]);
+  <MangaCard manga={item} onPressManga={handleMangaPress}/>
+ ),[handleMangaPress]);
 
  const keyExtractor=useCallback((item:Manga)=>item.id,[]);
 
