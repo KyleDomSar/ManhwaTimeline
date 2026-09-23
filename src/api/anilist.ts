@@ -72,7 +72,7 @@ query ($id:Int!) {
     }
    }
   }
-  recommendations(perPage:10,sort:RATING_DESC) {
+  recommendations(perPage:10) {
    nodes {
     mediaRecommendation {
      id
@@ -162,9 +162,19 @@ export async function getMangaDiscovery(id:string){
  const json=await response.json() as AniListDetailResponse;
  if(json.errors?.length)throw new Error(json.errors[0].message);
  const media=json.data?.Media;
- const related=(media?.relations?.edges??[]).filter(edge=>edge.relationType!=="ADAPTATION").map(edge=>({relationType:edge.relationType??"RELATED",manga:edge.node?mapManga(edge.node):undefined})).filter((item):item is {relationType:string;manga:Manga}=>Boolean(item.manga));
- const recommended=(media?.recommendations?.nodes??[]).map(node=>node.mediaRecommendation?mapManga(node.mediaRecommendation):undefined).filter((item):item is Manga=>Boolean(item));
- return {related,recommended};
+ const related=(media?.relations?.edges??[])
+  .filter(edge=>edge.relationType!=="ADAPTATION"&&edge.node?.type==="MANGA")
+  .map(edge=>({relationType:edge.relationType??"RELATED",manga:edge.node?mapManga(edge.node):undefined}))
+  .filter((item):item is {relationType:string;manga:Manga}=>Boolean(item.manga));
+ const recommended=(media?.recommendations?.nodes??[])
+  .map(node=>node.mediaRecommendation)
+  .filter((item):item is AniListMedia=>Boolean(item&&item.type==="MANGA"))
+  .map(mapManga);
+ if(recommended.length)return {related,recommended};
+ const fallback=media?.genres?.[0]
+  ?(await request({page:1,perPage:15,genre:media.genres[0],sort:["POPULARITY_DESC"]})).filter(item=>item.id!==id).slice(0,10)
+  :[];
+ return {related,recommended:fallback};
 }
 
 export async function searchManga(query:string,limit=20,genreId?:string){
