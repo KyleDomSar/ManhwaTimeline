@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useState} from "react";
 import {Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from "react-native";
 import {colors,radius,spacing} from "../constants/theme";
+import {TimelineSkeleton} from "../components/TimelineSkeleton";
 import {getActivity,getLibrary} from "../storage/library";
 import type {ActivityEvent,LibraryEntry} from "../types/models";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -9,11 +10,12 @@ import type { TimelineStackParamList } from "../navigation/TimelineStackNavigato
 type Props=NativeStackScreenProps<TimelineStackParamList,"TimelineHome">;
 
 export function TimelineScreen({navigation}:Props){
- const[entries,setEntries]=useState<LibraryEntry[]>([]);const[activity,setActivity]=useState<ActivityEvent[]>([]);const[refreshing,setRefreshing]=useState(false);
- const load=useCallback(async()=>{const[library,events]=await Promise.all([getLibrary(),getActivity(20)]);setEntries(library);setActivity(events)},[]);
+ const[entries,setEntries]=useState<LibraryEntry[]>([]);const[activity,setActivity]=useState<ActivityEvent[]>([]);const[refreshing,setRefreshing]=useState(false);const[loading,setLoading]=useState(true);
+ const load=useCallback(async()=>{const[library,events]=await Promise.all([getLibrary(),getActivity(20)]);setEntries(library);setActivity(events);setLoading(false)},[]);
  useEffect(()=>{void load()},[load]);
  const refresh=async()=>{setRefreshing(true);await load();setRefreshing(false)};
  const reading=entries.filter(e=>e.readingStatus==="reading");const completed=entries.filter(e=>e.readingStatus==="completed");const plan=entries.filter(e=>e.readingStatus==="plan_to_read");const total=entries.length;const progress=total?Math.round((completed.length/total)*100):0;
+ if(loading)return <ScrollView style={styles.container}><TimelineSkeleton/></ScrollView>;
  return <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary}/>}>
   <Text style={styles.kicker}>MANHWATIMELINE</Text><Text style={styles.title}>Your Timeline</Text><Text style={styles.subtitle}>Your reading activity, progress, and next reads.</Text>
   <View style={styles.stats}><Stat label="Library" value={String(total)}/><Stat label="Reading" value={String(reading.length)}/><Stat label="Done" value={String(completed.length)}/></View>
