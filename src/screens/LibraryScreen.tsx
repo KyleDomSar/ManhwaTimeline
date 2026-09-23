@@ -15,7 +15,7 @@ export function LibraryScreen({navigation}:Props){
  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{(["all",...statuses] as const).map(s=><Pressable key={s} onPress={()=>setFilter(s)} style={[styles.chip,filter===s&&styles.active]}><Text style={styles.chipText}>{s==="all"?"All":s==="plan_to_read"?"Plan to Read":s.charAt(0).toUpperCase()+s.slice(1)}</Text></Pressable>)}</ScrollView>
  {visible.length===0?<Text style={styles.empty}>Your library is empty. Add a manhwa from Discover.</Text>:visible.map(entry=><LibraryCard key={entry.manga.id} entry={entry} onUpdate={setEntries} navigation={navigation}/>)}</ScrollView>;
 }
-function LibraryCard({entry,onUpdate,navigation}:{entry:LibraryEntry;onUpdate:(v:LibraryEntry[])=>void;navigation:NativeStackScreenProps<DiscoverStackParamList,"DiscoverHome">["navigation"]}){
+function LibraryCard({entry,onUpdate,navigation}:{entry:LibraryEntry;onUpdate:(v:LibraryEntry[])=>void;navigation:NativeStackScreenProps<LibraryStackParamList,"LibraryHome">["navigation"]}){
  const[loading,setLoading]=useState(false);
  const progress=entry.currentChapter&&entry.manga.lastChapter?Math.min(100,Math.round((Number(entry.currentChapter)/Number(entry.manga.lastChapter))*100)):0;
  const markNext=async()=>{const current=Number(entry.currentChapter);const total=Number(entry.manga.lastChapter);const next=Number.isFinite(current)&&current>0?current+1:1;if(Number.isFinite(total)&&total>0&&next>total)return;setLoading(true);try{onUpdate(await updateLibraryEntry(entry.manga.id,{currentChapter:String(next),readingStatus:"reading"}))}finally{setLoading(false)}};
