@@ -1,10 +1,11 @@
 import React,{useCallback,useEffect,useState} from "react";
-import {Image,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from "react-native";
+import {Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { LibraryStackParamList } from "../navigation/LibraryStackNavigator";
 import {getLibrary,removeFromLibrary,updateLibraryEntry} from "../storage/library";
 import {colors,radius,spacing} from "../constants/theme";
 import {LibrarySkeleton} from "../components/LibrarySkeleton";
+import {MangaCover} from "../components/MangaCover";
 import type {LibraryEntry,ReadingStatus} from "../types/models";
 const statuses:ReadingStatus[]=["reading","completed","plan_to_read","dropped"];
 type Props=NativeStackScreenProps<LibraryStackParamList,"LibraryHome">;
@@ -24,7 +25,7 @@ function LibraryCard({entry,onUpdate,navigation}:{entry:LibraryEntry;onUpdate:(v
  return <View style={styles.card}>
   <View style={styles.row}>
    <Pressable onPress={()=>navigation.navigate("MangaDetail",{manga:entry.manga})} style={({pressed})=>[styles.mainInfo,pressed&&styles.pressed]}>
-    <View style={styles.coverWrap}>{entry.manga.coverUrl?<Image source={{uri:entry.manga.coverUrl}} style={styles.cover}/>:<View style={[styles.cover,styles.placeholder]}><Text style={styles.coverText}>No Cover</Text></View>}</View>
+    <View style={styles.coverWrap}><MangaCover uri={entry.manga.coverUrl} style={styles.cover}/></View>
     <View style={styles.info}><Text style={styles.cardTitle} numberOfLines={2}>{entry.manga.title}</Text><Text style={styles.status}>{entry.readingStatus==="plan_to_read"?"Plan to Read":entry.readingStatus.charAt(0).toUpperCase()+entry.readingStatus.slice(1)}</Text><Text style={styles.chapter}>{entry.currentChapter?"Last read: Chapter "+entry.currentChapter:"Not started"}</Text>{progress>0?<View style={styles.progressTrack}><View style={[styles.progressFill,{width:progress+"%"}]}/></View>:null}{progress>0?<Text style={styles.progressText}>{progress}% chapter progress</Text>:null}</View>
    </Pressable>
    <Pressable onPress={()=>void removeFromLibrary(entry.manga.id).then(onUpdate)} hitSlop={2} pressRetentionOffset={0} style={styles.removeButton}><Text style={styles.remove}>Remove</Text></Pressable>
@@ -47,9 +48,7 @@ const styles=StyleSheet.create({
  row:{flexDirection:"row",alignItems:"flex-start",gap:spacing.sm},
  mainInfo:{flexDirection:"row",flex:1,gap:spacing.md,minWidth:0},
  coverWrap:{width:72,height:104},
- cover:{width:72,height:104,borderRadius:radius.md,backgroundColor:colors.surfaceElevated},
- placeholder:{alignItems:"center",justifyContent:"center",padding:spacing.xs},
- coverText:{color:colors.textMuted,fontSize:10,textAlign:"center"},
+ cover:{width:72,height:104,borderRadius:radius.md},
  info:{flex:1,minWidth:0},
  cardTitle:{color:colors.text,fontSize:15,fontWeight:"800",lineHeight:20},
  status:{color:colors.primary,fontSize:12,fontWeight:"700",marginTop:spacing.xs},
