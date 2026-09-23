@@ -160,11 +160,13 @@ async function requestPage(variables:Record<string,unknown>):Promise<{data:Manga
   const json=await response.json() as AniListResponse;
   if(json.errors?.length)throw new Error(json.errors[0].message);
   const data=(json.data?.Page?.media??[]).map(mapManga);
-  await setCached(key,data);
-  return data;
+  const hasNextPage=Boolean(json.data?.Page?.pageInfo?.hasNextPage);
+  const result={data,hasNextPage};
+  await setCached(key,result);
+  return result;
  }catch(error){
-  const cached=await getCached<Manga[]>(key,true);
-  if(cached)return cached;
+  const cached=await getCached<{data:Manga[];hasNextPage:boolean}>(key,true);
+  if(cached?.data) return cached;
   throw error;
  }
 }
