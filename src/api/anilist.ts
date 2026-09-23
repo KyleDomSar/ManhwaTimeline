@@ -152,7 +152,7 @@ function mapManga(item:AniListMedia):Manga {
  };
 }
 
-async function request(variables:Record<string,unknown>):Promise<Manga[]> {
+async function requestPage(variables:Record<string,unknown>):Promise<{data:Manga[];hasNextPage:boolean}> {
  const key="media."+JSON.stringify(variables);
  try{
   const response=await fetchAniList({query:MEDIA_QUERY,variables});
