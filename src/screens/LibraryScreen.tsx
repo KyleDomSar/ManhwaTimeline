@@ -13,6 +13,8 @@ export function LibraryScreen({navigation}:Props){
  const[entries,setEntries]=useState<LibraryEntry[]>([]);const[filter,setFilter]=useState<ReadingStatus|"all">("all");const[refreshing,setRefreshing]=useState(false);const[loading,setLoading]=useState(true);
  const load=useCallback(async()=>{setEntries(await getLibrary());setLoading(false)},[]);useEffect(()=>{void load()},[load]);
  const refresh=async()=>{setRefreshing(true);await load();setRefreshing(false)};const visible=filter==="all"?entries:entries.filter(e=>e.readingStatus===filter);
+ const renderLibraryItem=useCallback(({item}:{item:LibraryEntry})=><LibraryCard entry={item} onUpdate={setEntries} navigation={navigation}/>,[navigation]);
+
  if(loading)return <ScrollView style={styles.container}><LibrarySkeleton/></ScrollView>;
  return <FlatList
   style={styles.container}
@@ -24,13 +26,13 @@ export function LibraryScreen({navigation}:Props){
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{(["all",...statuses] as const).map(s=><Pressable key={s} onPress={()=>setFilter(s)} style={[styles.chip,filter===s&&styles.active]}><Text style={styles.chipText}>{s==="all"?"All":s==="plan_to_read"?"Plan to Read":s.charAt(0).toUpperCase()+s.slice(1)}</Text></Pressable>)}</ScrollView>
   </>}
   ListEmptyComponent={<Text style={styles.empty}>Your library is empty. Add a manhwa from Discover.</Text>}
-  renderItem={({item})=><LibraryCard entry={item} onUpdate={setEntries} navigation={navigation}/>}
+  renderItem={renderLibraryItem}
  />;
 }
-function LibraryCard({entry,onUpdate,navigation}:{entry:LibraryEntry;onUpdate:(v:LibraryEntry[])=>void;navigation:NativeStackScreenProps<LibraryStackParamList,"LibraryHome">["navigation"]}){
+const LibraryCard=React.memo(function LibraryCard({entry,onUpdate,navigation}:{entry:LibraryEntry;onUpdate:(v:LibraryEntry[])=>void;navigation:NativeStackScreenProps<LibraryStackParamList,"LibraryHome">["navigation"]}){
  const[loading,setLoading]=useState(false);
  const progress=entry.currentChapter&&entry.manga.lastChapter?Math.min(100,Math.round((Number(entry.currentChapter)/Number(entry.manga.lastChapter))*100)):0;
- const markNext=async()=>{const current=Number(entry.currentChapter);const total=Number(entry.manga.lastChapter);const next=Number.isFinite(current)&&current>0?current+1:1;if(Number.isFinite(total)&&total>0&&next>total)return;setLoading(true);try{onUpdate(await updateLibraryEntry(entry.manga.id,{currentChapter:String(next),readingStatus:"reading"}))}finally{setLoading(false)}};
+ const markNext=useCallback(async()=>{const current=Number(entry.currentChapter);const total=Number(entry.manga.lastChapter);const next=Number.isFinite(current)&&current>0?current+1:1;if(Number.isFinite(total)&&total>0&&next>total)return;setLoading(true);try{onUpdate(await updateLibraryEntry(entry.manga.id,{currentChapter:String(next),readingStatus:"reading"}))}finally{setLoading(false)}};
  return <View style={styles.card}>
   <View style={styles.row}>
    <Pressable onPress={()=>navigation.navigate("MangaDetail",{manga:entry.manga})} style={({pressed})=>[styles.mainInfo,pressed&&styles.pressed]}>
