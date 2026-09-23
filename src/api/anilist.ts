@@ -48,14 +48,52 @@ query ($page:Int,$perPage:Int,$search:String,$status:MediaStatus,$genre:String,$
 `;
 
 const GENRES_QUERY=`query { GenreCollection }`;
-const DETAIL_QUERY=`
+const DETAIL_QUERY=\`
 query ($id:Int!) {
  Media(id:$id,type:MANGA) {
   id
-  relations { edges { relationType node { id title { english romaji native userPreferred } synonyms description(asHtml:false) status startDate { year } chapters genres coverImage { large extraLarge } popularity favourites averageScore staff(perPage:20) { edges { role node { name { full } } } } } } } }
-  recommendations(perPage:10,sort:RATING_DESC) { nodes { mediaRecommendation { id title { english romaji native userPreferred } synonyms description(asHtml:false) status startDate { year } chapters genres coverImage { large extraLarge } popularity favourites averageScore staff(perPage:20) { edges { role node { name { full } } } } } } }
+  relations {
+   edges {
+    relationType
+    node {
+     id
+     type
+     title { english romaji native userPreferred }
+     synonyms
+     description(asHtml:false)
+     status
+     startDate { year }
+     chapters
+     genres
+     coverImage { large extraLarge }
+     popularity
+     favourites
+     averageScore
+    }
+   }
+  }
+  recommendations(perPage:10,sort:RATING_DESC) {
+   nodes {
+    mediaRecommendation {
+     id
+     type
+     title { english romaji native userPreferred }
+     synonyms
+     description(asHtml:false)
+     status
+     startDate { year }
+     chapters
+     genres
+     coverImage { large extraLarge }
+     popularity
+     favourites
+     averageScore
+    }
+   }
+  }
  }
-}`;
+}
+\`;
 
 function mapStatus(status?:string|null):MangaStatus {
  if(status==="RELEASING")return "ongoing";
