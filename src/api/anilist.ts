@@ -153,7 +153,7 @@ function mapManga(item:AniListMedia):Manga {
 }
 
 async function requestPage(variables:Record<string,unknown>):Promise<{data:Manga[];hasNextPage:boolean}> {
- const key="media."+JSON.stringify(variables);
+ const key="media.page."+JSON.stringify(variables);
  try{
   const response=await fetchAniList({query:MEDIA_QUERY,variables});
   if(!response.ok)throw new Error("AniList request failed: "+response.status);
