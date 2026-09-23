@@ -1,32 +1,19 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing } from "../constants/theme";
-
-export function LibraryScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Library</Text>
-      <Text style={styles.subtitle}>Your tracked manhwa will appear here.</Text>
-    </View>
-  );
+import React,{useCallback,useEffect,useState} from "react";
+import {Pressable,ScrollView,StyleSheet,Text,View} from "react-native";
+import {getLibrary,removeFromLibrary,updateLibraryEntry} from "../storage/library";
+import {colors,radius,spacing} from "../constants/theme";
+import type {LibraryEntry,ReadingStatus} from "../types/models";
+const statuses:ReadingStatus[]=["reading","completed","plan_to_read","dropped"];
+export function LibraryScreen(){
+ const[entries,setEntries]=useState<LibraryEntry[]>([]);const[filter,setFilter]=useState<ReadingStatus|"all">("all");
+ const load=useCallback(async()=>setEntries(await getLibrary()),[]);useEffect(()=>{void load()},[load]);
+ const visible=filter==="all"?entries:entries.filter(e=>e.readingStatus===filter);
+ return <ScrollView style={styles.container} contentContainerStyle={styles.content}><Text style={styles.kicker}>LIBRARY</Text><Text style={styles.title}>My Manhwa</Text>
+ <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{(["all",...statuses] as const).map(s=><Pressable key={s} onPress={()=>setFilter(s)} style={[styles.chip,filter===s&&styles.active]}><Text style={styles.chipText}>{s==="all"?"All":s.replace("_"," ")}</Text></Pressable>)}</ScrollView>
+ {visible.length===0?<Text style={styles.empty}>Your library is empty. Add a manhwa from Discover.</Text>:visible.map(entry=><View key={entry.manga.id} style={styles.card}><View style={styles.row}><View style={styles.info}><Text style={styles.cardTitle} numberOfLines={2}>{entry.manga.title}</Text><Text style={styles.status}>{entry.readingStatus.replace("_"," ")}</Text></View><Pressable onPress={()=>void removeFromLibrary(entry.manga.id).then(setEntries)}><Text style={styles.remove}>Remove</Text></Pressable></View>
+ <View style={styles.actions}>{statuses.map(s=><Pressable key={s} onPress={()=>void updateLibraryEntry(entry.manga.id,{readingStatus:s}).then(setEntries)} style={[styles.action,entry.readingStatus===s&&styles.selected]}><Text style={styles.actionText}>{s.replace("_"," ")}</Text></Pressable>)}</View>
+ <Text style={styles.chapter}>{entry.currentChapter?"Chapter "+entry.currentChapter:"No chapter progress yet"}</Text>
+ <Pressable onPress={()=>{const next=entry.currentChapter?String(Number(entry.currentChapter)+1):"1";void updateLibraryEntry(entry.manga.id,{currentChapter:next}).then(setEntries)}} style={styles.chapterButton}><Text style={styles.chapterButtonText}>{entry.currentChapter?"Mark next chapter":"Start Chapter 1"}</Text></Pressable>
+ </View>)}</ScrollView>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.xl
-  },
-  title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "800"
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: spacing.sm
-  }
-});
+const styles=StyleSheet.create({container:{flex:1,backgroundColor:colors.background},content:{padding:spacing.lg,paddingBottom:spacing.xxl},kicker:{color:colors.primary,fontSize:12,fontWeight:"800",letterSpacing:1.5},title:{color:colors.text,fontSize:30,fontWeight:"800",marginTop:spacing.xs},filters:{gap:spacing.sm,paddingVertical:spacing.lg},chip:{paddingHorizontal:spacing.md,paddingVertical:spacing.sm,borderRadius:radius.pill,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},active:{backgroundColor:colors.primarySoft,borderColor:colors.primary},chipText:{color:colors.textSecondary,textTransform:"capitalize"},empty:{color:colors.textSecondary,textAlign:"center",marginTop:spacing.xxl},card:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,marginBottom:spacing.md},row:{flexDirection:"row",justifyContent:"space-between",gap:spacing.md},info:{flex:1},cardTitle:{color:colors.text,fontSize:17,fontWeight:"800"},status:{color:colors.primary,textTransform:"capitalize",marginTop:spacing.xs},remove:{color:colors.danger,fontWeight:"700"},actions:{flexDirection:"row",flexWrap:"wrap",gap:spacing.sm,marginTop:spacing.md},action:{borderWidth:1,borderColor:colors.border,borderRadius:radius.sm,paddingHorizontal:spacing.sm,paddingVertical:spacing.xs},selected:{borderColor:colors.primary,backgroundColor:colors.primarySoft},actionText:{color:colors.textSecondary,fontSize:12,textTransform:"capitalize"},chapter:{color:colors.textSecondary,marginTop:spacing.md},chapterButton:{marginTop:spacing.sm,backgroundColor:colors.surfaceElevated,borderRadius:radius.sm,padding:spacing.sm,alignItems:"center"},chapterButtonText:{color:colors.text,fontWeight:"700"}});
