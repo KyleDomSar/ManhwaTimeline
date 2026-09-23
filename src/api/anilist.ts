@@ -56,8 +56,7 @@ function mapStatus(status?:string|null):MangaStatus {
 }
 
 function cleanDescription(value?:string|null){
- return value?.replace(/<[^>]*>/g,"").replace(/\
-\\s*/g," ").trim()||undefined;
+ return value?.replace(/<[^>]*>/g,"").replace(/\\n\\s*/g," ").trim()||undefined;
 }
 
 function mapManga(item:AniListMedia):Manga {
