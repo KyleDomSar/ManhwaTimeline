@@ -169,7 +169,12 @@ async function requestPage(variables:Record<string,unknown>):Promise<{data:Manga
  }
 }
 
-const browse=(limit:number,sort:string,genre?:string,status?:string)=>request({page:1,perPage:limit,sort:[sort],genre:genre||undefined,status:status||undefined});
+async function request(variables:Record<string,unknown>):Promise<Manga[]> {
+ return (await requestPage(variables)).data;
+}
+
+const browsePage=(limit:number,page:number,sort:string,genre?:string,status?:string)=>requestPage({page,perPage:limit,sort:[sort],genre:genre||undefined,status:status||undefined});
+const browse=(limit:number,sort:string,genre?:string,status?:string)=>browsePage(limit,1,sort,genre,status).then(result=>result.data);
 
 export async function getTags(){
  const key="genres";
@@ -192,6 +197,10 @@ export async function getPopularManga(limit=20,genreId?:string){return browse(li
 export async function getLatestManga(limit=20,genreId?:string){return browse(limit,"UPDATED_AT_DESC",genreId)}
 export async function getCompletedManga(limit=20,genreId?:string){return browse(limit,"POPULARITY_DESC",genreId,"FINISHED")}
 export async function getOngoingManga(limit=20,genreId?:string){return browse(limit,"POPULARITY_DESC",genreId,"RELEASING")}
+export async function getPopularMangaPage(page:number,limit=20,genreId?:string){return browsePage(limit,page,"POPULARITY_DESC",genreId)}
+export async function getLatestMangaPage(page:number,limit=20,genreId?:string){return browsePage(limit,page,"UPDATED_AT_DESC",genreId)}
+export async function getCompletedMangaPage(page:number,limit=20,genreId?:string){return browsePage(limit,page,"POPULARITY_DESC",genreId,"FINISHED")}
+export async function getOngoingMangaPage(page:number,limit=20,genreId?:string){return browsePage(limit,page,"POPULARITY_DESC",genreId,"RELEASING")}
 
 type MangaDiscovery = {
  related: Array<{relationType:string;manga:Manga}>;
@@ -232,9 +241,12 @@ export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
  }
 }
 
-export async function searchManga(query:string,limit=20,genreId?:string){
- const results=await request({page:1,perPage:Math.max(limit,30),search:query.trim(),genre:genreId||undefined,sort:["SEARCH_MATCH","POPULARITY_DESC"]});
+export async function searchMangaPage(query:string,page:number,limit=20,genreId?:string){
+ const pageResult=await requestPage({page,perPage:Math.max(limit,30),search:query.trim(),genre:genreId||undefined,sort:["SEARCH_MATCH","POPULARITY_DESC"]});
  const q=query.trim().toLowerCase();
  const score=(title:string)=>{const t=title.toLowerCase();return t===q?0:t.startsWith(q)?1:t.includes(q)?2:3};
- return results.sort((a,b)=>score(a.title)-score(b.title)).slice(0,limit);
+ return {...pageResult,data:pageResult.data.sort((a,b)=>score(a.title)-score(b.title)).slice(0,limit)};
+}
+export async function searchManga(query:string,limit=20,genreId?:string){
+ return (await searchMangaPage(query,1,limit,genreId)).data;
 }
