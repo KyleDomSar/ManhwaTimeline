@@ -75,7 +75,7 @@ function mapManga(item:AniListMedia):Manga {
   genres:item.genres??[],
   authors:[...new Set(authors)],
   artists:[...new Set(artists)],
-  lastChapter:item.chapters!=null?String(item.chapters):undefined,
+  lastChapter:item.chapters!=null?String(item.chapters):undefined,\n  totalChapters:item.chapters??undefined,\n  chapterCountSource:item.chapters!=null?"AniList":undefined,
   contentRating:"safe",
   followedCount:item.favourites??undefined,
   popularity:item.popularity??undefined,
