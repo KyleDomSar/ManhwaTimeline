@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "ManhwaTimeline",
+    "slug": "manhwatimeline",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "scheme": "manhwatimeline",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D10"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
