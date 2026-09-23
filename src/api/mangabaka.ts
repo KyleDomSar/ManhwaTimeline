@@ -1,4 +1,5 @@
 import type { Manga } from "../types/models";
+import { getCached, setCached } from "../storage/cache";
 
 const API_URL = "https://api.mangabaka.org/v1";
 const REQUEST_TIMEOUT = 10000;
@@ -45,7 +46,11 @@ function chapterCount(item: SearchItem) {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
-export async function getChapterInfo(manga: Pick<Manga, "title" | "altTitles">) {
+export async function getChapterInfo(manga: Pick<Manga, "id" | "title" | "altTitles">) {
+  const key = `chapter-info.${manga.id}`;
+  const cached = await getCached<{ totalChapters?: number; source: "MangaBaka" }>(key);
+  if (cached) return cached;
+
   const queries = [manga.title, ...(manga.altTitles ?? [])].filter(Boolean);
   for (const query of queries) {
     const params = new URLSearchParams({ q: query, limit: "10" });
@@ -56,7 +61,13 @@ export async function getChapterInfo(manga: Pick<Manga, "title" | "altTitles">) 
     const matches = [...items].sort((a, b) => score(query, a) - score(query, b));
     const best = matches.find(item => chapterCount(item) !== undefined);
     const totalChapters = best ? chapterCount(best) : undefined;
-    if (totalChapters !== undefined) return { totalChapters, source: "MangaBaka" as const };
+    if (totalChapters !== undefined) {
+      const result = { totalChapters, source: "MangaBaka" as const };
+      await setCached(key, result);
+      return result;
+    }
   }
-  return { source: "MangaBaka" as const };
+  const result = { source: "MangaBaka" as const };
+  await setCached(key, result);
+  return result;
 }
