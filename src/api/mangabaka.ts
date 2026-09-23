@@ -1,6 +1,17 @@
 import type { Manga } from "../types/models";
 
 const API_URL = "https://api.mangabaka.org/v1";
+const REQUEST_TIMEOUT = 10000;
+
+async function fetchMangaBaka(url: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 type SearchItem = {
   id?: string | number;
@@ -38,7 +49,7 @@ export async function getChapterInfo(manga: Pick<Manga, "title" | "altTitles">) 
   const queries = [manga.title, ...(manga.altTitles ?? [])].filter(Boolean);
   for (const query of queries) {
     const params = new URLSearchParams({ q: query, limit: "10" });
-    const response = await fetch(`${API_URL}/series/search?${params.toString()}`);
+    const response = await fetchMangaBaka(`${API_URL}/series/search?${params.toString()}`);
     if (!response.ok) continue;
     const json = (await response.json()) as SearchResponse;
     const items = json.data ?? json.results ?? [];
