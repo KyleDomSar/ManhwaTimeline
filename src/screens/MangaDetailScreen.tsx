@@ -4,7 +4,8 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { colors, radius, spacing } from "../constants/theme";
 import type { DiscoverStackParamList } from "../navigation/DiscoverStackNavigator";
 import type { Chapter, ReadingStatus } from "../types/models";
-import { getChapters } from "../api/chapters";\nimport { getChapterInfo } from "../api/mangabaka";
+import { getChapters } from "../api/chapters";
+import { getChapterInfo } from "../api/mangabaka";
 import { addToLibrary, getLibrary, removeFromLibrary, updateLibraryEntry } from "../storage/library";
 
 type Props = NativeStackScreenProps<DiscoverStackParamList, "MangaDetail">;
