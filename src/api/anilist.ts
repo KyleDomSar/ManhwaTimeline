@@ -56,7 +56,8 @@ function mapStatus(status?:string|null):MangaStatus {
 }
 
 function cleanDescription(value?:string|null){
- return value?.replace(/<[^>]*>/g,"").replace(/\\n\\s*/g," ").trim()||undefined;
+ return value?.replace(/<[^>]*>/g,"").replace(/\
+\\s*/g," ").trim()||undefined;
 }
 
 function mapManga(item:AniListMedia):Manga {
@@ -75,7 +76,9 @@ function mapManga(item:AniListMedia):Manga {
   genres:item.genres??[],
   authors:[...new Set(authors)],
   artists:[...new Set(artists)],
-  lastChapter:item.chapters!=null?String(item.chapters):undefined,\n  totalChapters:item.chapters??undefined,\n  chapterCountSource:item.chapters!=null?"AniList":undefined,
+  lastChapter:item.chapters!=null?String(item.chapters):undefined,
+  totalChapters:item.chapters??undefined,
+  chapterCountSource:item.chapters!=null?"AniList":undefined,
   contentRating:"safe",
   followedCount:item.favourites??undefined,
   popularity:item.popularity??undefined,
