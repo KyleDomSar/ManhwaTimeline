@@ -20,6 +20,8 @@ type AniListMedia={
 
 type AniListResponse={data?:{Page?:{media?:AniListMedia[];pageInfo?:{hasNextPage?:boolean}};Media?:AniListMedia};errors?:Array<{message:string}>};
 
+type AniListDetailResponse={data?:{Media?:AniListMedia&{relations?:{edges?:Array<{relationType?:string|null;node?:AniListMedia|null}>};recommendations?:{nodes?:Array<{mediaRecommendation?:AniListMedia|null}>}}};errors?:Array<{message:string}>};
+
 const MEDIA_QUERY=`
 query ($page:Int,$perPage:Int,$search:String,$status:MediaStatus,$genre:String,$sort:[MediaSort]) {
  Page(page:$page,perPage:$perPage) {
@@ -46,6 +48,14 @@ query ($page:Int,$perPage:Int,$search:String,$status:MediaStatus,$genre:String,$
 `;
 
 const GENRES_QUERY=`query { GenreCollection }`;
+const DETAIL_QUERY=`
+query ($id:Int!) {
+ Media(id:$id,type:MANGA) {
+  id
+  relations { edges { relationType node { id title { english romaji native userPreferred } synonyms description(asHtml:false) status startDate { year } chapters genres coverImage { large extraLarge } popularity favourites averageScore staff(perPage:20) { edges { role node { name { full } } } } } } } }
+  recommendations(perPage:10,sort:RATING_DESC) { nodes { mediaRecommendation { id title { english romaji native userPreferred } synonyms description(asHtml:false) status startDate { year } chapters genres coverImage { large extraLarge } popularity favourites averageScore staff(perPage:20) { edges { role node { name { full } } } } } } }
+ }
+}`;
 
 function mapStatus(status?:string|null):MangaStatus {
  if(status==="RELEASING")return "ongoing";
@@ -107,6 +117,17 @@ export async function getPopularManga(limit=20,genreId?:string){return browse(li
 export async function getLatestManga(limit=20,genreId?:string){return browse(limit,"UPDATED_AT_DESC",genreId)}
 export async function getCompletedManga(limit=20,genreId?:string){return browse(limit,"POPULARITY_DESC",genreId,"FINISHED")}
 export async function getOngoingManga(limit=20,genreId?:string){return browse(limit,"POPULARITY_DESC",genreId,"RELEASING")}
+
+export async function getMangaDiscovery(id:string){
+ const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:DETAIL_QUERY,variables:{id:Number(id)}})});
+ if(!response.ok)throw new Error("AniList detail request failed: "+response.status);
+ const json=await response.json() as AniListDetailResponse;
+ if(json.errors?.length)throw new Error(json.errors[0].message);
+ const media=json.data?.Media;
+ const related=(media?.relations?.edges??[]).filter(edge=>edge.relationType!=="ADAPTATION").map(edge=>({relationType:edge.relationType??"RELATED",manga:edge.node?mapManga(edge.node):undefined})).filter((item):item is {relationType:string;manga:Manga}=>Boolean(item.manga));
+ const recommended=(media?.recommendations?.nodes??[]).map(node=>node.mediaRecommendation?mapManga(node.mediaRecommendation):undefined).filter((item):item is Manga=>Boolean(item));
+ return {related,recommended};
+}
 
 export async function searchManga(query:string,limit=20,genreId?:string){
  const results=await request({page:1,perPage:Math.max(limit,30),search:query.trim(),genre:genreId||undefined,sort:["SEARCH_MATCH","POPULARITY_DESC"]});
