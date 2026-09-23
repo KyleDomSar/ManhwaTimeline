@@ -2,6 +2,22 @@ import type { Manga, MangaStatus } from "../types/models";
 import {getCached,setCached} from "../storage/cache";
 
 const API_URL="https://graphql.anilist.co";
+const REQUEST_TIMEOUT=10000;
+
+async function fetchAniList(body:unknown){
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT);
+ try{
+  return await fetch(API_URL,{
+   method:"POST",
+   headers:{"Content-Type":"application/json","Accept":"application/json"},
+   body:JSON.stringify(body),
+   signal:controller.signal
+  });
+ }finally{
+  clearTimeout(timeout);
+ }
+}
 
 type AniListMedia={
  id:number;
@@ -139,7 +155,7 @@ function mapManga(item:AniListMedia):Manga {
 async function request(variables:Record<string,unknown>):Promise<Manga[]> {
  const key="media."+JSON.stringify(variables);
  try{
-  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:MEDIA_QUERY,variables})});
+  const response=await fetchAniList({query:MEDIA_QUERY,variables});
   if(!response.ok)throw new Error("AniList request failed: "+response.status);
   const json=await response.json() as AniListResponse;
   if(json.errors?.length)throw new Error(json.errors[0].message);
@@ -158,7 +174,7 @@ const browse=(limit:number,sort:string,genre?:string,status?:string)=>request({p
 export async function getTags(){
  const key="genres";
  try{
-  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:GENRES_QUERY})});
+  const response=await fetchAniList({query:GENRES_QUERY});
   if(!response.ok)throw new Error("AniList genre request failed: "+response.status);
   const json=await response.json() as {data?:{GenreCollection?:string[]};errors?:Array<{message:string}>};
   if(json.errors?.length)throw new Error(json.errors[0].message);
@@ -185,7 +201,7 @@ type MangaDiscovery = {
 export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
  const key="discovery."+id;
  try{
-  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:DETAIL_QUERY,variables:{id:Number(id)}})});
+  const response=await fetchAniList({query:DETAIL_QUERY,variables:{id:Number(id)}});
   if(!response.ok)throw new Error("AniList detail request failed: "+response.status);
   const json=await response.json() as AniListDetailResponse;
   if(json.errors?.length)throw new Error(json.errors[0].message);
