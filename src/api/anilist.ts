@@ -137,21 +137,39 @@ function mapManga(item:AniListMedia):Manga {
 }
 
 async function request(variables:Record<string,unknown>):Promise<Manga[]> {
- const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:MEDIA_QUERY,variables})});
- if(!response.ok)throw new Error("AniList request failed: "+response.status);
- const json=await response.json() as AniListResponse;
- if(json.errors?.length)throw new Error(json.errors[0].message);
- return (json.data?.Page?.media??[]).map(mapManga);
+ const key="media."+JSON.stringify(variables);
+ try{
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:MEDIA_QUERY,variables})});
+  if(!response.ok)throw new Error("AniList request failed: "+response.status);
+  const json=await response.json() as AniListResponse;
+  if(json.errors?.length)throw new Error(json.errors[0].message);
+  const data=(json.data?.Page?.media??[]).map(mapManga);
+  await setCached(key,data);
+  return data;
+ }catch(error){
+  const cached=await getCached<Manga[]>(key,true);
+  if(cached)return cached;
+  throw error;
+ }
 }
 
 const browse=(limit:number,sort:string,genre?:string,status?:string)=>request({page:1,perPage:limit,sort:[sort],genre:genre||undefined,status:status||undefined});
 
 export async function getTags(){
- const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:GENRES_QUERY})});
- if(!response.ok)throw new Error("AniList genre request failed: "+response.status);
- const json=await response.json() as {data?:{GenreCollection?:string[]};errors?:Array<{message:string}>};
- if(json.errors?.length)throw new Error(json.errors[0].message);
- return (json.data?.GenreCollection??[]).map(name=>({id:name,name}));
+ const key="genres";
+ try{
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:GENRES_QUERY})});
+  if(!response.ok)throw new Error("AniList genre request failed: "+response.status);
+  const json=await response.json() as {data?:{GenreCollection?:string[]};errors?:Array<{message:string}>};
+  if(json.errors?.length)throw new Error(json.errors[0].message);
+  const tags=(json.data?.GenreCollection??[]).map(name=>({id:name,name}));
+  await setCached(key,tags);
+  return tags;
+ }catch(error){
+  const cached=await getCached<{id:string;name:string}[]>(key,true);
+  if(cached)return cached;
+  throw error;
+ }
 }
 
 export async function getPopularManga(limit=20,genreId?:string){return browse(limit,"POPULARITY_DESC",genreId)}
