@@ -21,7 +21,10 @@ export function DiscoverScreen({navigation}:Props){
  const[genre,setGenre]=useState<Tag|undefined>();
  const[loading,setLoading]=useState(true);
  const[refreshing,setRefreshing]=useState(false);
- const[error,setError]=useState<string|null>(null);\n const[page,setPage]=useState(1);\n const[hasNextPage,setHasNextPage]=useState(false);\n const[loadingMore,setLoadingMore]=useState(false);
+ const[error,setError]=useState<string|null>(null);
+ const[page,setPage]=useState(1);
+ const[hasNextPage,setHasNextPage]=useState(false);
+ const[loadingMore,setLoadingMore]=useState(false);
 
  useEffect(()=>{void getTags().then(setTags).catch(()=>{})},[]);
 
@@ -30,15 +33,18 @@ export function DiscoverScreen({navigation}:Props){
   refresh?setRefreshing(true):setLoading(true);
   try{
    const id=selectedGenre?.id;
-   let data:Manga[];
-   if(search.trim())data=await searchManga(search.trim(),20,id);
-   else if(selected==="latest")data=await getLatestManga(20,id);
-   else if(selected==="ongoing")data=await getOngoingManga(20,id);
-   else if(selected==="completed")data=await getCompletedManga(20,id);
-   else data=await getPopularManga(20,id);
+   let result:{data:Manga[];hasNextPage:boolean};
+   if(search.trim())result=await searchMangaPage(search.trim(),1,20,id);
+   else if(selected==="latest")result=await getLatestMangaPage(1,20,id);
+   else if(selected==="ongoing")result=await getOngoingMangaPage(1,20,id);
+   else if(selected==="completed")result=await getCompletedMangaPage(1,20,id);
+   else result=await getPopularMangaPage(1,20,id);
+   let data=result.data;
    if(selected==="ongoing")data=data.filter(item=>item.status==="ongoing");
    else if(selected==="completed")data=data.filter(item=>item.status==="completed");
    setManga(data);
+   setPage(1);
+   setHasNextPage(result.hasNextPage);
   }catch{
    setError("Unable to load manga. Check your connection and try again.");
   }finally{
@@ -46,6 +52,29 @@ export function DiscoverScreen({navigation}:Props){
    setRefreshing(false);
   }
  },[query,filter,genre]);
+
+ const loadMore=useCallback(async()=>{
+  if(loadingMore||!hasNextPage)return;
+  setLoadingMore(true);
+  try{
+   const nextPage=page+1;
+   const id=genre?.id;
+   let result:{data:Manga[];hasNextPage:boolean};
+   if(query.trim())result=await searchMangaPage(query.trim(),nextPage,20,id);
+   else if(filter==="latest")result=await getLatestMangaPage(nextPage,20,id);
+   else if(filter==="ongoing")result=await getOngoingMangaPage(nextPage,20,id);
+   else if(filter==="completed")result=await getCompletedMangaPage(nextPage,20,id);
+   else result=await getPopularMangaPage(nextPage,20,id);
+   let data=result.data;
+   if(filter==="ongoing")data=data.filter(item=>item.status==="ongoing");
+   else if(filter==="completed")data=data.filter(item=>item.status==="completed");
+   setManga(current=>[...current,...data.filter(item=>!current.some(existing=>existing.id===item.id))]);
+   setPage(nextPage);
+   setHasNextPage(result.hasNextPage);
+  }catch{
+   setError("Unable to load more manga. Check your connection and try again.");
+  }finally{setLoadingMore(false);}
+ },[loadingMore,hasNextPage,page,query,filter,genre]);
 
  useEffect(()=>{void load("",filter,genre)},[]);
 
@@ -87,7 +116,8 @@ export function DiscoverScreen({navigation}:Props){
       contentContainerStyle={manga.length?styles.list:styles.emptyList}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary}/>}
       renderItem={renderMangaItem}
-      ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>{query.trim()?"No results found":"No manga available"}</Text><Text style={styles.secondary}>{query.trim()?"Try a different title or search term.":"Pull down to refresh and try again."}</Text></View>}\n      ListFooterComponent={hasNextPage?<View style={styles.loadMoreWrap}><Pressable disabled={loadingMore} onPress={()=>void loadMore()} style={[styles.loadMoreButton,loadingMore&&styles.disabled]}><Text style={styles.loadMoreText}>{loadingMore?"Loading...":"Load more"}</Text></Pressable></View>:null}
+      ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>{query.trim()?"No results found":"No manga available"}</Text><Text style={styles.secondary}>{query.trim()?"Try a different title or search term.":"Pull down to refresh and try again."}</Text></View>}
+      ListFooterComponent={hasNextPage?<View style={styles.loadMoreWrap}><Pressable disabled={loadingMore} onPress={()=>void loadMore()} style={[styles.loadMoreButton,loadingMore&&styles.disabled]}><Text style={styles.loadMoreText}>{loadingMore?"Loading...":"Load more"}</Text></Pressable></View>:null}
     />
   }
  </View>;
@@ -118,5 +148,9 @@ const styles=StyleSheet.create({
  emptyState:{flex:1,alignItems:"center",justifyContent:"center",paddingVertical:spacing.xxl},
  emptyTitle:{color:colors.text,fontSize:18,fontWeight:"800"},
  secondary:{color:colors.textSecondary,marginTop:spacing.sm,textAlign:"center"},
- error:{color:colors.danger,textAlign:"center"},\n loadMoreWrap:{padding:spacing.lg,paddingTop:spacing.sm},\n loadMoreButton:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.primary,borderRadius:radius.md,paddingVertical:spacing.md,alignItems:"center"},\n loadMoreText:{color:colors.primary,fontWeight:"800"},\n disabled:{opacity:.5}
+ error:{color:colors.danger,textAlign:"center"},
+ loadMoreWrap:{padding:spacing.lg,paddingTop:spacing.sm},
+ loadMoreButton:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.primary,borderRadius:radius.md,paddingVertical:spacing.md,alignItems:"center"},
+ loadMoreText:{color:colors.primary,fontWeight:"800"},
+ disabled:{opacity:.5}
 });
