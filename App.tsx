@@ -2,6 +2,7 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DarkTheme, Theme } from "@react-navigation/native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { NetworkBanner } from "./src/components/NetworkBanner";
 
 const theme: Theme = {
   ...DarkTheme,
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <NavigationContainer theme={theme}>
       <StatusBar style="light" />
+      <NetworkBanner />
       <RootNavigator />
     </NavigationContainer>
   );
