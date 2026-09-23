@@ -1,6 +1,6 @@
 import React,{useCallback,useEffect,useState} from "react";
 import {FlatList,Pressable,RefreshControl,StyleSheet,Text,TextInput,View} from "react-native";
-import {getCompletedManga,getLatestManga,getOngoingManga,getPopularManga,getTags,searchManga} from "../api/anilist";
+import {getCompletedMangaPage,getLatestMangaPage,getOngoingMangaPage,getPopularMangaPage,getTags,searchMangaPage} from "../api/anilist";
 import {MangaCard} from "../components/MangaCard";
 import {MangaCardSkeleton} from "../components/MangaCardSkeleton";
 import {colors,radius,spacing} from "../constants/theme";
@@ -21,7 +21,7 @@ export function DiscoverScreen({navigation}:Props){
  const[genre,setGenre]=useState<Tag|undefined>();
  const[loading,setLoading]=useState(true);
  const[refreshing,setRefreshing]=useState(false);
- const[error,setError]=useState<string|null>(null);
+ const[error,setError]=useState<string|null>(null);\n const[page,setPage]=useState(1);\n const[hasNextPage,setHasNextPage]=useState(false);\n const[loadingMore,setLoadingMore]=useState(false);
 
  useEffect(()=>{void getTags().then(setTags).catch(()=>{})},[]);
 
@@ -87,7 +87,7 @@ export function DiscoverScreen({navigation}:Props){
       contentContainerStyle={manga.length?styles.list:styles.emptyList}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary}/>}
       renderItem={renderMangaItem}
-      ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>{query.trim()?"No results found":"No manga available"}</Text><Text style={styles.secondary}>{query.trim()?"Try a different title or search term.":"Pull down to refresh and try again."}</Text></View>}
+      ListEmptyComponent={<View style={styles.emptyState}><Text style={styles.emptyTitle}>{query.trim()?"No results found":"No manga available"}</Text><Text style={styles.secondary}>{query.trim()?"Try a different title or search term.":"Pull down to refresh and try again."}</Text></View>}\n      ListFooterComponent={hasNextPage?<View style={styles.loadMoreWrap}><Pressable disabled={loadingMore} onPress={()=>void loadMore()} style={[styles.loadMoreButton,loadingMore&&styles.disabled]}><Text style={styles.loadMoreText}>{loadingMore?"Loading...":"Load more"}</Text></Pressable></View>:null}
     />
   }
  </View>;
@@ -118,5 +118,5 @@ const styles=StyleSheet.create({
  emptyState:{flex:1,alignItems:"center",justifyContent:"center",paddingVertical:spacing.xxl},
  emptyTitle:{color:colors.text,fontSize:18,fontWeight:"800"},
  secondary:{color:colors.textSecondary,marginTop:spacing.sm,textAlign:"center"},
- error:{color:colors.danger,textAlign:"center"}
+ error:{color:colors.danger,textAlign:"center"},\n loadMoreWrap:{padding:spacing.lg,paddingTop:spacing.sm},\n loadMoreButton:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.primary,borderRadius:radius.md,paddingVertical:spacing.md,alignItems:"center"},\n loadMoreText:{color:colors.primary,fontWeight:"800"},\n disabled:{opacity:.5}
 });
