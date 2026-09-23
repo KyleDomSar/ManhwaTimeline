@@ -154,6 +154,8 @@ function mapManga(item:AniListMedia):Manga {
 
 async function requestPage(variables:Record<string,unknown>):Promise<{data:Manga[];hasNextPage:boolean}> {
  const key="media.page."+JSON.stringify(variables);
+ const cached=await getCached<{data:Manga[];hasNextPage:boolean}>(key);
+ if(cached)return cached;
  try{
   const response=await fetchAniList({query:MEDIA_QUERY,variables});
   if(!response.ok)throw new Error("AniList request failed: "+response.status);
@@ -180,6 +182,8 @@ const browse=(limit:number,sort:string,genre?:string,status?:string)=>browsePage
 
 export async function getTags(){
  const key="genres";
+ const cached=await getCached<{id:string;name:string}[]>(key);
+ if(cached)return cached;
  try{
   const response=await fetchAniList({query:GENRES_QUERY});
   if(!response.ok)throw new Error("AniList genre request failed: "+response.status);
@@ -211,6 +215,8 @@ type MangaDiscovery = {
 
 export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
  const key="discovery."+id;
+ const cached=await getCached<MangaDiscovery>(key);
+ if(cached)return cached;
  try{
   const response=await fetchAniList({query:DETAIL_QUERY,variables:{id:Number(id)}});
   if(!response.ok)throw new Error("AniList detail request failed: "+response.status);
