@@ -52,6 +52,7 @@ const DETAIL_QUERY=\`
 query ($id:Int!) {
  Media(id:$id,type:MANGA) {
   id
+  genres
   relations {
    edges {
     relationType
