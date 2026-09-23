@@ -130,7 +130,7 @@ function mapManga(item:AniListMedia):Manga {
   contentRating:"safe",
   followedCount:item.favourites??undefined,
   popularity:item.popularity??undefined,
-  favourites:item.favourites??undefined,
+  favourites:item.favourites??undefined,\n  averageScore:item.averageScore??undefined,
  };
 }
 
