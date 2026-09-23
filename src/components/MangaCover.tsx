@@ -18,7 +18,7 @@ type Props = {
   resizeMode?: "cover" | "contain" | "stretch" | "repeat" | "center";
 };
 
-const MangaCover = React.memo(function MangaCover({
+export const MangaCover = React.memo(function MangaCover({
   uri,
   style,
   fallbackText = "No Cover",
