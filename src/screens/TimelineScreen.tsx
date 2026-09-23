@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useState} from "react";
-import {Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from "react-native";
+import {FlatList,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from "react-native";
 import {colors,radius,spacing} from "../constants/theme";
 import {TimelineSkeleton} from "../components/TimelineSkeleton";
 import {getActivity,getLibrary} from "../storage/library";
@@ -16,15 +16,24 @@ export function TimelineScreen({navigation}:Props){
  const refresh=async()=>{setRefreshing(true);await load();setRefreshing(false)};
  const reading=entries.filter(e=>e.readingStatus==="reading");const completed=entries.filter(e=>e.readingStatus==="completed");const plan=entries.filter(e=>e.readingStatus==="plan_to_read");const total=entries.length;const progress=total?Math.round((completed.length/total)*100):0;
  if(loading)return <ScrollView style={styles.container}><TimelineSkeleton/></ScrollView>;
- return <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary}/>}>
-  <Text style={styles.kicker}>MANHWATIMELINE</Text><Text style={styles.title}>Your Timeline</Text><Text style={styles.subtitle}>Your reading activity, progress, and next reads.</Text>
-  <View style={styles.stats}><Stat label="Library" value={String(total)}/><Stat label="Reading" value={String(reading.length)}/><Stat label="Done" value={String(completed.length)}/></View>
-  <View style={styles.progressCard}><View style={styles.row}><Text style={styles.cardTitle}>Library progress</Text><Text style={styles.percent}>{progress}%</Text></View><View style={styles.bar}><View style={[styles.fill,{width:progress+"%"}]}/></View><Text style={styles.muted}>{completed.length} of {total} titles completed</Text></View>
-  <Section title="Continue Reading" entries={reading} empty="No manhwa currently marked as Reading." navigation={navigation}/>
-  <Section title="Plan to Read" entries={plan} empty="Nothing queued yet." navigation={navigation}/>
-  {completed.length>0?<Section title="Completed" entries={completed.slice(0,5)} empty="" navigation={navigation}/>:null}
-  <View style={styles.section}><Text style={styles.sectionTitle}>Recent Activity</Text>{activity.length===0?<Text style={styles.empty}>Your reading activity will appear here.</Text>:activity.map(event=><ActivityCard key={event.id} event={event} entries={entries} navigation={navigation}/>)}</View>
- </ScrollView>;
+ return <FlatList
+  style={styles.container}
+  contentContainerStyle={styles.content}
+  data={entries}
+  keyExtractor={entry=>entry.manga.id}
+  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary}/>}
+  ListHeaderComponent={<>
+   <Text style={styles.kicker}>MANHWATIMELINE</Text><Text style={styles.title}>Your Timeline</Text><Text style={styles.subtitle}>Your reading activity, progress, and next reads.</Text>
+   <View style={styles.stats}><Stat label="Library" value={String(total)}/><Stat label="Reading" value={String(reading.length)}/><Stat label="Done" value={String(completed.length)}/></View>
+   <View style={styles.progressCard}><View style={styles.row}><Text style={styles.cardTitle}>Library progress</Text><Text style={styles.percent}>{progress}%</Text></View><View style={styles.bar}><View style={[styles.fill,{width:progress+"%"}]}/></View><Text style={styles.muted}>{completed.length} of {total} titles completed</Text></View>
+   <Section title="Continue Reading" entries={reading} empty="No manhwa currently marked as Reading." navigation={navigation}/>
+   <Section title="Plan to Read" entries={plan} empty="Nothing queued yet." navigation={navigation}/>
+   {completed.length>0?<Section title="Completed" entries={completed.slice(0,5)} empty="" navigation={navigation}/>:null}
+   <View style={styles.section}><Text style={styles.sectionTitle}>Recent Activity</Text>{activity.length===0?<Text style={styles.empty}>Your reading activity will appear here.</Text>:activity.map(event=><ActivityCard key={event.id} event={event} entries={entries} navigation={navigation}/>)}</View>
+  </>}
+  renderItem={({item})=>null}
+  ListFooterComponent={null}
+ />;
 }
 function formatDate(value:string){const date=new Date(value);return date.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
 function Stat({label,value}:{label:string;value:string}){return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>}
