@@ -4,13 +4,15 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { LibraryStackParamList } from "../navigation/LibraryStackNavigator";
 import {getLibrary,removeFromLibrary,updateLibraryEntry} from "../storage/library";
 import {colors,radius,spacing} from "../constants/theme";
+import {LibrarySkeleton} from "../components/LibrarySkeleton";
 import type {LibraryEntry,ReadingStatus} from "../types/models";
 const statuses:ReadingStatus[]=["reading","completed","plan_to_read","dropped"];
 type Props=NativeStackScreenProps<LibraryStackParamList,"LibraryHome">;
 export function LibraryScreen({navigation}:Props){
- const[entries,setEntries]=useState<LibraryEntry[]>([]);const[filter,setFilter]=useState<ReadingStatus|"all">("all");const[refreshing,setRefreshing]=useState(false);
- const load=useCallback(async()=>setEntries(await getLibrary()),[]);useEffect(()=>{void load()},[load]);
+ const[entries,setEntries]=useState<LibraryEntry[]>([]);const[filter,setFilter]=useState<ReadingStatus|"all">("all");const[refreshing,setRefreshing]=useState(false);const[loading,setLoading]=useState(true);
+ const load=useCallback(async()=>{setEntries(await getLibrary());setLoading(false)},[]);useEffect(()=>{void load()},[load]);
  const refresh=async()=>{setRefreshing(true);await load();setRefreshing(false)};const visible=filter==="all"?entries:entries.filter(e=>e.readingStatus===filter);
+ if(loading)return <ScrollView style={styles.container}><LibrarySkeleton/></ScrollView>;
  return <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary}/>}><Text style={styles.kicker}>LIBRARY</Text><Text style={styles.title}>My Manhwa</Text>
  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{(["all",...statuses] as const).map(s=><Pressable key={s} onPress={()=>setFilter(s)} style={[styles.chip,filter===s&&styles.active]}><Text style={styles.chipText}>{s==="all"?"All":s==="plan_to_read"?"Plan to Read":s.charAt(0).toUpperCase()+s.slice(1)}</Text></Pressable>)}</ScrollView>
  {visible.length===0?<Text style={styles.empty}>Your library is empty. Add a manhwa from Discover.</Text>:visible.map(entry=><LibraryCard key={entry.manga.id} entry={entry} onUpdate={setEntries} navigation={navigation}/>)}</ScrollView>;
