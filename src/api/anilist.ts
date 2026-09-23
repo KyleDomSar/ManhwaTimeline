@@ -237,34 +237,35 @@ export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
  const existing=discoveryInFlight.get(key);
  if(existing)return existing;
  const request=(async()=>{
-  const response=await fetchAniList({query:DETAIL_QUERY,variables:{id:Number(id)}});
-  if(!response.ok)throw new Error("AniList detail request failed: "+response.status);
-  const json=await response.json() as AniListDetailResponse;
-  if(json.errors?.length)throw new Error(json.errors[0].message);
-  const media=json.data?.Media;
-  const related=(media?.relations?.edges??[])
-   .filter(edge=>edge.relationType!=="ADAPTATION"&&edge.node?.type==="MANGA")
-   .map(edge=>({relationType:edge.relationType??"RELATED",manga:edge.node?mapManga(edge.node):undefined}))
-   .filter((item):item is {relationType:string;manga:Manga}=>Boolean(item.manga));
-  const recommended=(media?.recommendations?.nodes??[])
-   .map(node=>node.mediaRecommendation)
-   .filter((item):item is AniListMedia=>Boolean(item&&item.type==="MANGA"))
-   .map(mapManga);
-  if(recommended.length){
-   const result={related,recommended};
+  try{
+   const response=await fetchAniList({query:DETAIL_QUERY,variables:{id:Number(id)}});
+   if(!response.ok)throw new Error("AniList detail request failed: "+response.status);
+   const json=await response.json() as AniListDetailResponse;
+   if(json.errors?.length)throw new Error(json.errors[0].message);
+   const media=json.data?.Media;
+   const related=(media?.relations?.edges??[])
+    .filter(edge=>edge.relationType!=="ADAPTATION"&&edge.node?.type==="MANGA")
+    .map(edge=>({relationType:edge.relationType??"RELATED",manga:edge.node?mapManga(edge.node):undefined}))
+    .filter((item):item is {relationType:string;manga:Manga}=>Boolean(item.manga));
+   const recommended=(media?.recommendations?.nodes??[])
+    .map(node=>node.mediaRecommendation)
+    .filter((item):item is AniListMedia=>Boolean(item&&item.type==="MANGA"))
+    .map(mapManga);
+   if(recommended.length){
+    const result={related,recommended};
+    await setCached(key,result);
+    return result;
+   }
+   const fallback=media?.genres?.[0]
+    ?(await request({page:1,perPage:15,genre:media.genres[0],sort:["POPULARITY_DESC"]})).filter(item=>item.id!==id).slice(0,10)
+    :[];
+   const result={related,recommended:fallback};
    await setCached(key,result);
    return result;
-  }
-  const fallback=media?.genres?.[0]
-   ?(await request({page:1,perPage:15,genre:media.genres[0],sort:["POPULARITY_DESC"]})).filter(item=>item.id!==id).slice(0,10)
-   :[];
-  const result={related,recommended:fallback};
-  await setCached(key,result);
-  return result;
- }catch(error){
-  const cached=await getCached<MangaDiscovery>(key,true);
-  if(cached)return cached;
-  throw error;
+  }catch(error){
+   const stale=await getCached<MangaDiscovery>(key,true);
+   if(stale)return stale;
+   throw error;
   }finally{
    discoveryInFlight.delete(key);
   }
@@ -272,7 +273,6 @@ export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
  discoveryInFlight.set(key,request);
  return request;
 }
-
 export async function searchMangaPage(query:string,page:number,limit=20,genreId?:string){
  const pageResult=await requestPage({page,perPage:Math.max(limit,30),search:query.trim(),genre:genreId||undefined,sort:["SEARCH_MATCH","POPULARITY_DESC"]});
  const q=query.trim().toLowerCase();
