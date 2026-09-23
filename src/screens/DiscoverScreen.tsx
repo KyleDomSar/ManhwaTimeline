@@ -84,7 +84,7 @@ export function DiscoverScreen({navigation}:Props){
  },[load,query,filter]);
 
  const renderMangaItem=useCallback(({item}:{item:Manga})=>(
-  <MangaCard manga={item} onPress={()=>navigation.navigate("MangaDetail",{manga:item})}/>
+  <MangaCard manga={item} onPressManga={(selected)=>navigation.navigate("MangaDetail",{manga:selected})}/>
  ),[navigation]);
 
  const keyExtractor=useCallback((item:Manga)=>item.id,[]);
