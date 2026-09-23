@@ -19,8 +19,8 @@ export function TimelineScreen({navigation}:Props){
  useEffect(()=>{void load()},[load]);
  const refresh=useCallback(async()=>{setRefreshing(true);await load();setRefreshing(false)},[load]);
  const reading=entries.filter(e=>e.readingStatus==="reading");const completed=entries.filter(e=>e.readingStatus==="completed");const plan=entries.filter(e=>e.readingStatus==="plan_to_read");const total=entries.length;const progress=total?Math.round((completed.length/total)*100):0;
- if(loading)return <ScrollView style={styles.container}><TimelineSkeleton/></ScrollView>;
  const renderTimelineItem=useCallback(({item}:{item:TimelineRow})=>item.kind==="entry"?<TimelineEntryCard entry={item.entry} navigation={navigation}/>:<ActivityCard event={item.event} entries={entries} navigation={navigation}/>,[entries,navigation]);
+ if(loading)return <ScrollView style={styles.container}><TimelineSkeleton/></ScrollView>;
  const sections:{title:string;empty:string;data:TimelineRow[]}[]=[
   {title:"Continue Reading",empty:"No manhwa currently marked as Reading.",data:reading.map(entry=>({kind:"entry" as const,entry}))},
   {title:"Plan to Read",empty:"Nothing queued yet.",data:plan.map(entry=>({kind:"entry" as const,entry}))},
