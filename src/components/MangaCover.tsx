@@ -18,7 +18,7 @@ type Props = {
   resizeMode?: "cover" | "contain" | "stretch" | "repeat" | "center";
 };
 
-export function MangaCover({
+const MangaCover = React.memo(function MangaCover({
   uri,
   style,
   fallbackText = "No Cover",
@@ -73,7 +73,7 @@ export function MangaCover({
   return (
     <View style={[style, styles.container]}>
       <Image
-        source={{ uri }}
+        source={{ uri, cache: "force-cache" }}
         style={StyleSheet.absoluteFill}
         resizeMode={resizeMode}
         onLoadStart={() => {
@@ -102,7 +102,7 @@ export function MangaCover({
       ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
