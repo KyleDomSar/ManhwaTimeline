@@ -4,6 +4,11 @@ import {getCached,setCached} from "../storage/cache";
 const API_URL="https://graphql.anilist.co";
 const REQUEST_TIMEOUT=10000;
 
+type DiscoveryResult = { related: Array<{relationType:string;manga:Manga}>; recommended: Manga[] };
+const pageInFlight=new Map<string,Promise<{data:Manga[];hasNextPage:boolean}>>();
+const tagsInFlight={current:undefined as Promise<{id:string;name:string}[]>|undefined};
+const discoveryInFlight=new Map<string,Promise<DiscoveryResult>>();
+
 async function fetchAniList(body:unknown){
  const controller=new AbortController();
  const timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT);
@@ -156,21 +161,29 @@ async function requestPage(variables:Record<string,unknown>):Promise<{data:Manga
  const key="media.page."+JSON.stringify(variables);
  const cached=await getCached<{data:Manga[];hasNextPage:boolean}>(key);
  if(cached)return cached;
- try{
-  const response=await fetchAniList({query:MEDIA_QUERY,variables});
-  if(!response.ok)throw new Error("AniList request failed: "+response.status);
-  const json=await response.json() as AniListResponse;
-  if(json.errors?.length)throw new Error(json.errors[0].message);
-  const data=(json.data?.Page?.media??[]).map(mapManga);
-  const hasNextPage=Boolean(json.data?.Page?.pageInfo?.hasNextPage);
-  const result={data,hasNextPage};
-  await setCached(key,result);
-  return result;
- }catch(error){
-  const cached=await getCached<{data:Manga[];hasNextPage:boolean}>(key,true);
-  if(cached?.data) return cached;
-  throw error;
- }
+ const existing=pageInFlight.get(key);
+ if(existing)return existing;
+ const request=(async()=>{
+  try{
+   const response=await fetchAniList({query:MEDIA_QUERY,variables});
+   if(!response.ok)throw new Error("AniList request failed: "+response.status);
+   const json=await response.json() as AniListResponse;
+   if(json.errors?.length)throw new Error(json.errors[0].message);
+   const data=(json.data?.Page?.media??[]).map(mapManga);
+   const hasNextPage=Boolean(json.data?.Page?.pageInfo?.hasNextPage);
+   const result={data,hasNextPage};
+   await setCached(key,result);
+   return result;
+  }catch(error){
+   const stale=await getCached<{data:Manga[];hasNextPage:boolean}>(key,true);
+   if(stale?.data)return stale;
+   throw error;
+  }finally{
+   pageInFlight.delete(key);
+  }
+ })();
+ pageInFlight.set(key,request);
+ return request;
 }
 
 async function request(variables:Record<string,unknown>):Promise<Manga[]> {
@@ -184,19 +197,26 @@ export async function getTags(){
  const key="genres";
  const cached=await getCached<{id:string;name:string}[]>(key);
  if(cached)return cached;
- try{
-  const response=await fetchAniList({query:GENRES_QUERY});
-  if(!response.ok)throw new Error("AniList genre request failed: "+response.status);
-  const json=await response.json() as {data?:{GenreCollection?:string[]};errors?:Array<{message:string}>};
-  if(json.errors?.length)throw new Error(json.errors[0].message);
-  const tags=(json.data?.GenreCollection??[]).map(name=>({id:name,name}));
-  await setCached(key,tags);
-  return tags;
- }catch(error){
-  const cached=await getCached<{id:string;name:string}[]>(key,true);
-  if(cached)return cached;
-  throw error;
- }
+ if(tagsInFlight.current)return tagsInFlight.current;
+ const request=(async()=>{
+  try{
+   const response=await fetchAniList({query:GENRES_QUERY});
+   if(!response.ok)throw new Error("AniList genre request failed: "+response.status);
+   const json=await response.json() as {data?:{GenreCollection?:string[]};errors?:Array<{message:string}>};
+   if(json.errors?.length)throw new Error(json.errors[0].message);
+   const tags=(json.data?.GenreCollection??[]).map(name=>({id:name,name}));
+   await setCached(key,tags);
+   return tags;
+  }catch(error){
+   const stale=await getCached<{id:string;name:string}[]>(key,true);
+   if(stale)return stale;
+   throw error;
+  }finally{
+   tagsInFlight.current=undefined;
+  }
+ })();
+ tagsInFlight.current=request;
+ return request;
 }
 
 export async function getPopularManga(limit=20,genreId?:string){return browse(limit,"POPULARITY_DESC",genreId)}
@@ -208,16 +228,15 @@ export async function getLatestMangaPage(page:number,limit=20,genreId?:string){r
 export async function getCompletedMangaPage(page:number,limit=20,genreId?:string){return browsePage(limit,page,"POPULARITY_DESC",genreId,"FINISHED")}
 export async function getOngoingMangaPage(page:number,limit=20,genreId?:string){return browsePage(limit,page,"POPULARITY_DESC",genreId,"RELEASING")}
 
-type MangaDiscovery = {
- related: Array<{relationType:string;manga:Manga}>;
- recommended: Manga[];
-};
+type MangaDiscovery = DiscoveryResult;
 
 export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
  const key="discovery."+id;
  const cached=await getCached<MangaDiscovery>(key);
  if(cached)return cached;
- try{
+ const existing=discoveryInFlight.get(key);
+ if(existing)return existing;
+ const request=(async()=>{
   const response=await fetchAniList({query:DETAIL_QUERY,variables:{id:Number(id)}});
   if(!response.ok)throw new Error("AniList detail request failed: "+response.status);
   const json=await response.json() as AniListDetailResponse;
@@ -246,7 +265,12 @@ export async function getMangaDiscovery(id:string):Promise<MangaDiscovery>{
   const cached=await getCached<MangaDiscovery>(key,true);
   if(cached)return cached;
   throw error;
- }
+  }finally{
+   discoveryInFlight.delete(key);
+  }
+ })();
+ discoveryInFlight.set(key,request);
+ return request;
 }
 
 export async function searchMangaPage(query:string,page:number,limit=20,genreId?:string){
