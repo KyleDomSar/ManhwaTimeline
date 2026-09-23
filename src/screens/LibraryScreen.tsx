@@ -32,7 +32,7 @@ export function LibraryScreen({navigation}:Props){
 const LibraryCard=React.memo(function LibraryCard({entry,onUpdate,navigation}:{entry:LibraryEntry;onUpdate:(v:LibraryEntry[])=>void;navigation:NativeStackScreenProps<LibraryStackParamList,"LibraryHome">["navigation"]}){
  const[loading,setLoading]=useState(false);
  const progress=entry.currentChapter&&entry.manga.lastChapter?Math.min(100,Math.round((Number(entry.currentChapter)/Number(entry.manga.lastChapter))*100)):0;
- const markNext=useCallback(async()=>{const current=Number(entry.currentChapter);const total=Number(entry.manga.lastChapter);const next=Number.isFinite(current)&&current>0?current+1:1;if(Number.isFinite(total)&&total>0&&next>total)return;setLoading(true);try{onUpdate(await updateLibraryEntry(entry.manga.id,{currentChapter:String(next),readingStatus:"reading"}))}finally{setLoading(false)}};
+ const markNext=useCallback(async()=>{const current=Number(entry.currentChapter);const total=Number(entry.manga.lastChapter);const next=Number.isFinite(current)&&current>0?current+1:1;if(Number.isFinite(total)&&total>0&&next>total)return;setLoading(true);try{onUpdate(await updateLibraryEntry(entry.manga.id,{currentChapter:String(next),readingStatus:"reading"}))}finally{setLoading(false)}},[entry.currentChapter,entry.manga.id,entry.manga.lastChapter,onUpdate]);
  return <View style={styles.card}>
   <View style={styles.row}>
    <Pressable onPress={()=>navigation.navigate("MangaDetail",{manga:entry.manga})} style={({pressed})=>[styles.mainInfo,pressed&&styles.pressed]}>
@@ -44,7 +44,7 @@ const LibraryCard=React.memo(function LibraryCard({entry,onUpdate,navigation}:{e
   <View style={styles.actions}>{statuses.map(s=><Pressable key={s} onPress={()=>void updateLibraryEntry(entry.manga.id,{readingStatus:s}).then(onUpdate)} style={[styles.action,entry.readingStatus===s&&styles.selected]}><Text style={styles.actionText}>{s==="plan_to_read"?"Plan to Read":s.charAt(0).toUpperCase()+s.slice(1)}</Text></Pressable>)}</View>
   <View style={styles.bottomActions}><Pressable onPress={()=>void markNext()} style={styles.chapterButton}><Text style={styles.chapterButtonText}>{loading?"Saving...":"Mark Next Chapter"}</Text></Pressable></View>
  </View>;
-}
+});
 const styles=StyleSheet.create({
  container:{flex:1,backgroundColor:colors.background},
  content:{padding:spacing.lg,paddingBottom:spacing.xl},
