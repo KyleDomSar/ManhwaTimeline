@@ -7,7 +7,7 @@ import type { ReadingStatus } from "../types/models";
 import { getChapterInfo } from "../api/mangabaka";
 import { getMangaDiscovery } from "../api/anilist";
 import type { Manga } from "../types/models";
-import { addToLibrary, getLibrary, removeFromLibrary, updateLibraryEntry } from "../storage/library";
+import { addToLibrary, getLibraryEntry, removeFromLibrary, updateLibraryEntry } from "../storage/library";
 import { MangaCover } from "../components/MangaCover";
 
 type Props = NativeStackScreenProps<DiscoverStackParamList, "MangaDetail">;
@@ -39,7 +39,7 @@ const statuses:Array<{value:ReadingStatus;label:string}>=[{value:"reading",label
 
 export function MangaDetailScreen({route,navigation}:Props){
  const{manga}=route.params;const[related,setRelated]=useState<Array<{relationType:string;manga:Manga}>>([]);const[recommended,setRecommended]=useState<Manga[]>([]);const[tracked,setTracked]=useState(false);const[readingStatus,setReadingStatus]=useState<ReadingStatus>("plan_to_read");const[currentChapter,setCurrentChapter]=useState<string|undefined>();const[totalChapters,setTotalChapters]=useState<number|undefined>(manga.totalChapters);const[chapterSource,setChapterSource]=useState<string|undefined>(manga.chapterCountSource);const[loading,setLoading]=useState(true);const[chapterInput,setChapterInput]=useState("");const[chapterLoading,setChapterLoading]=useState(true);const[chapterError,setChapterError]=useState(false);const[discoveryLoading,setDiscoveryLoading]=useState(true);const[discoveryError,setDiscoveryError]=useState(false);
- const syncLibrary=useCallback(async()=>{const entries=await getLibrary();const entry=entries.find(item=>item.manga.id===manga.id);setTracked(Boolean(entry));setReadingStatus(entry?.readingStatus??"plan_to_read");setCurrentChapter(entry?.currentChapter);setLoading(false)},[manga.id]);
+ const syncLibrary=useCallback(async()=>{const entry=await getLibraryEntry(manga.id);setTracked(Boolean(entry));setReadingStatus(entry?.readingStatus??"plan_to_read");setCurrentChapter(entry?.currentChapter);setLoading(false)},[manga.id]);
  useEffect(()=>{void syncLibrary()},[syncLibrary]);
  useEffect(()=>{let active=true;setChapterLoading(true);setChapterError(false);void getChapterInfo(manga).then(info=>{if(active&&info.totalChapters!==undefined){setTotalChapters(info.totalChapters);setChapterSource(info.source)}}).catch(()=>{if(active)setChapterError(true)}).finally(()=>{if(active)setChapterLoading(false)});return()=>{active=false}},[manga.id,manga.title,manga.altTitles]); useEffect(()=>{let active=true;setDiscoveryLoading(true);setDiscoveryError(false);void getMangaDiscovery(manga.id).then(result=>{if(active){setRelated(result.related);setRecommended(result.recommended)}}).catch(()=>{if(active)setDiscoveryError(true)}).finally(()=>{if(active)setDiscoveryLoading(false)});return()=>{active=false}},[manga.id]);
  const markChapter=async(chapter:string)=>{const value=chapter.trim();if(!value)return;const status=readingStatus==="plan_to_read"?"reading":readingStatus;await addToLibrary(manga,status);await updateLibraryEntry(manga.id,{currentChapter:value,readingStatus:status});setTracked(true);setCurrentChapter(value);setChapterInput(value);if(readingStatus==="plan_to_read")setReadingStatus("reading")};
