@@ -21,7 +21,7 @@ export function TimelineScreen({navigation}:Props){
   <Section title="Continue Reading" entries={reading} empty="No manhwa currently marked as Reading." navigation={navigation}/>
   <Section title="Plan to Read" entries={plan} empty="Nothing queued yet." navigation={navigation}/>
   {completed.length>0?<Section title="Completed" entries={completed.slice(0,5)} empty="" navigation={navigation}/>:null}
-  <View style={styles.section}><Text style={styles.sectionTitle}>Recent Activity</Text>{activity.length===0?<Text style={styles.empty}>Your reading activity will appear here.</Text>:activity.map(event=><View key={event.id} style={styles.activity}><View style={styles.dot}/><View style={styles.activityInfo}><Text style={styles.itemTitle}>{event.mangaTitle}</Text><Text style={styles.muted}>{event.detail}</Text><Text style={styles.date}>{formatDate(event.createdAt)}</Text></View></View>)}</View>
+  <View style={styles.section}><Text style={styles.sectionTitle}>Recent Activity</Text>{activity.length===0?<Text style={styles.empty}>Your reading activity will appear here.</Text>:activity.map(event=><ActivityCard key={event.id} event={event} entries={entries} navigation={navigation}/>)}</View>
  </ScrollView>;
 }
 function formatDate(value:string){const date=new Date(value);return date.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
