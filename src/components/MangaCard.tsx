@@ -9,7 +9,7 @@ export function MangaCard({manga,onPress}:Props){
   <View style={styles.info}><Text numberOfLines={2} style={styles.title}>{manga.title}</Text>
    <View style={styles.badges}><Text style={styles.status}>{manga.status}</Text>{manga.year?<Text style={styles.meta}>{manga.year}</Text>:null}</View>
    {manga.genres.length?<Text numberOfLines={1} style={styles.genres}>{manga.genres.slice(0,3).join("  •  ")}</Text>:null}
-   {manga.followedCount!==undefined?<Text style={styles.followers}>{manga.followedCount.toLocaleString()} followers</Text>:null}
+   {manga.followedCount!==undefined?<Text style={styles.followers}>{manga.followedCount.toLocaleString()} favorites</Text>:null}
    {manga.lastChapter?<Text style={styles.chapter}>Latest chapter {manga.lastChapter}</Text>:null}
   </View>
  </Pressable>;
