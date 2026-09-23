@@ -60,12 +60,9 @@ async function findMangaId(title: string, altTitles: string[] = []): Promise<str
   const queries = [title, ...altTitles].filter(Boolean);
 
   for (const query of queries) {
-    const params = new URLSearchParams({
-      title: query,
-      limit: "10",
-      "contentRating[]": "safe",
-      "contentRating[]": "suggestive",
-    });
+    const params = new URLSearchParams({ title: query, limit: "10" });
+    params.append("contentRating[]", "safe");
+    params.append("contentRating[]", "suggestive");
 
     const response = await fetch(`${API_URL}/manga?${params.toString()}`);
     if (!response.ok) continue;
@@ -99,10 +96,10 @@ export async function getChapters(
       offset: String(offset),
       "order[chapter]": "asc",
       "order[volume]": "asc",
-      "translatedLanguage[]": language,
-      "contentRating[]": "safe",
-      "contentRating[]": "suggestive",
     });
+    params.append("translatedLanguage[]", language);
+    params.append("contentRating[]", "safe");
+    params.append("contentRating[]", "suggestive");
 
     const response = await fetch(
       `${API_URL}/manga/${mangaId}/feed?${params.toString()}`,
