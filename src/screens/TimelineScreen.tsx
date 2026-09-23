@@ -27,7 +27,7 @@ export function TimelineScreen({navigation}:Props){
   style={styles.container}
   contentContainerStyle={styles.content}
   sections={sections}
-  keyExtractor={(item,index)=>item.kind==="entry"?item.entry.manga.id:item.event.id+"-"+index}
+  keyExtractor={(item,index)=>item.kind==="entry"?"entry:"+item.entry.manga.id:"activity:"+item.event.id+"-"+index}
   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary}/>}
   ListHeaderComponent={<>
    <Text style={styles.kicker}>MANHWATIMELINE</Text><Text style={styles.title}>Your Timeline</Text><Text style={styles.subtitle}>Your reading activity, progress, and next reads.</Text>
