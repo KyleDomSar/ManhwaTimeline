@@ -1,4 +1,5 @@
 import type { Manga, MangaStatus } from "../types/models";
+import {getCached,setCached} from "../storage/cache";
 
 const API_URL="https://graphql.anilist.co";
 
