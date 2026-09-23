@@ -48,7 +48,7 @@ query ($page:Int,$perPage:Int,$search:String,$status:MediaStatus,$genre:String,$
 `;
 
 const GENRES_QUERY=`query { GenreCollection }`;
-const DETAIL_QUERY=\`
+const DETAIL_QUERY=`
 query ($id:Int!) {
  Media(id:$id,type:MANGA) {
   id
@@ -94,7 +94,7 @@ query ($id:Int!) {
   }
  }
 }
-\`;
+`;
 
 function mapStatus(status?:string|null):MangaStatus {
  if(status==="RELEASING")return "ongoing";
