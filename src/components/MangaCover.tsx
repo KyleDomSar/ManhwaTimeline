@@ -72,20 +72,6 @@ export function MangaCover({
 
   return (
     <View style={[style, styles.container]}>
-      {loading ? (
-        <View pointerEvents="none" style={styles.loadingOverlay}>
-          <View style={styles.loadingBase} />
-          <Animated.View
-            style={[
-              styles.shimmer,
-              {
-                transform: [{ translateX: shimmerTranslateX }],
-              },
-            ]}
-          />
-        </View>
-      ) : null}
-
       <Image
         source={{ uri }}
         style={StyleSheet.absoluteFill}
@@ -100,6 +86,20 @@ export function MangaCover({
           setFailed(true);
         }}
       />
+
+      {loading ? (
+        <View pointerEvents="none" style={styles.loadingOverlay}>
+          <View style={styles.loadingBase} />
+          <Animated.View
+            style={[
+              styles.shimmer,
+              {
+                transform: [{ translateX: shimmerTranslateX }],
+              },
+            ]}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
