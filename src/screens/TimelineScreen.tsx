@@ -8,7 +8,10 @@ import type {ActivityEvent,LibraryEntry} from "../types/models";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { TimelineStackParamList } from "../navigation/TimelineStackNavigator";
 
-type Props=NativeStackScreenProps<TimelineStackParamList,"TimelineHome">;\ntype TimelineRow={\n kind:"entry";\n entry:LibraryEntry;\n}|{\n kind:"activity";\n event:ActivityEvent;\n};
+type Props=NativeStackScreenProps<TimelineStackParamList,"TimelineHome">;
+type TimelineRow=
+ {kind:"entry";entry:LibraryEntry}
+ |{kind:"activity";event:ActivityEvent};
 
 export function TimelineScreen({navigation}:Props){
  const[entries,setEntries]=useState<LibraryEntry[]>([]);const[activity,setActivity]=useState<ActivityEvent[]>([]);const[refreshing,setRefreshing]=useState(false);const[loading,setLoading]=useState(true);
