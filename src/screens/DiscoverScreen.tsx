@@ -1,6 +1,6 @@
 import React,{useCallback,useEffect,useState} from "react";
 import {ActivityIndicator,FlatList,Pressable,RefreshControl,StyleSheet,Text,TextInput,View} from "react-native";
-import {getCompletedManga,getLatestManga,getOngoingManga,getPopularManga,getTags,searchManga} from "../api/mangadex";
+import {getCompletedManga,getLatestManga,getOngoingManga,getPopularManga,getTags,searchManga} from "../api/anilist";
 import {MangaCard} from "../components/MangaCard";import {colors,radius,spacing} from "../constants/theme";import type {Manga} from "../types/models";import type {NativeStackScreenProps} from "@react-navigation/native-stack";import type {DiscoverStackParamList} from "../navigation/DiscoverStackNavigator";
 type Props=NativeStackScreenProps<DiscoverStackParamList,"DiscoverHome">;type Filter="popular"|"latest"|"ongoing"|"completed";type Tag={id:string;name:string};
 const filters:Filter[]=["popular","latest","ongoing","completed"];
