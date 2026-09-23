@@ -20,6 +20,7 @@ export function TimelineScreen({navigation}:Props){
  const refresh=useCallback(async()=>{setRefreshing(true);await load();setRefreshing(false)},[load]);
  const reading=entries.filter(e=>e.readingStatus==="reading");const completed=entries.filter(e=>e.readingStatus==="completed");const plan=entries.filter(e=>e.readingStatus==="plan_to_read");const total=entries.length;const progress=total?Math.round((completed.length/total)*100):0;
  if(loading)return <ScrollView style={styles.container}><TimelineSkeleton/></ScrollView>;
+ const renderTimelineItem=useCallback(({item}:{item:TimelineRow})=>item.kind==="entry"?<TimelineEntryCard entry={item.entry} navigation={navigation}/>:<ActivityCard event={item.event} entries={entries} navigation={navigation}/>,[entries,navigation]);
  const sections:{title:string;empty:string;data:TimelineRow[]}[]=[
   {title:"Continue Reading",empty:"No manhwa currently marked as Reading.",data:reading.map(entry=>({kind:"entry" as const,entry}))},
   {title:"Plan to Read",empty:"Nothing queued yet.",data:plan.map(entry=>({kind:"entry" as const,entry}))},
@@ -42,8 +43,6 @@ export function TimelineScreen({navigation}:Props){
   renderSectionFooter={({section})=>section.data.length===0?<Text style={styles.empty}>{section.empty}</Text>:null}
  />;
 }
- const renderTimelineItem=useCallback(({item}:{item:TimelineRow})=>item.kind==="entry"?<TimelineEntryCard entry={item.entry} navigation={navigation}/>:<ActivityCard event={item.event} entries={entries} navigation={navigation}/>,[entries,navigation]);
-
 function formatDate(value:string){const date=new Date(value);return date.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
 function Stat({label,value}:{label:string;value:string}){return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>}
 function Section({title,entries,empty,navigation}:{title:string;entries:LibraryEntry[];empty:string;navigation:Props["navigation"]}){return <View style={styles.section}><Text style={styles.sectionTitle}>{title}</Text>{entries.length===0?<Text style={styles.empty}>{empty}</Text>:entries.map(e=><Pressable key={e.manga.id} onPress={()=>navigation.push("MangaDetail",{manga:e.manga})} style={({pressed})=>[styles.item,pressed&&styles.pressed]}><View style={styles.info}><Text style={styles.itemTitle} numberOfLines={1}>{e.manga.title}</Text><Text style={styles.muted}>{e.currentChapter?"Last read: Chapter "+e.currentChapter:"Not started"}</Text></View><Text style={styles.chevron}>›</Text></Pressable>)}</View>}
