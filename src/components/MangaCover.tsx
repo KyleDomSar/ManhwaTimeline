@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { Image, ImageStyle, StyleProp, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  Image,
+  ImageStyle,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { colors } from "../constants/theme";
 
 type Props = {
@@ -9,14 +18,44 @@ type Props = {
   resizeMode?: "cover" | "contain" | "stretch" | "repeat" | "center";
 };
 
-export function MangaCover({ uri, style, fallbackText = "No Cover", resizeMode = "cover" }: Props) {
+export function MangaCover({
+  uri,
+  style,
+  fallbackText = "No Cover",
+  resizeMode = "cover",
+}: Props) {
   const [loading, setLoading] = useState(Boolean(uri));
   const [failed, setFailed] = useState(false);
+  const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     setLoading(Boolean(uri));
     setFailed(false);
   }, [uri]);
+
+  useEffect(() => {
+    if (!loading) {
+      shimmer.stopAnimation();
+      shimmer.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.timing(shimmer, {
+        toValue: 1,
+        duration: 1100,
+        easing: Easing.linear,
+        useNativeDriver: true,
+        isInteraction: false,
+      }),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [loading, shimmer]);
 
   if (!uri || failed) {
     return (
@@ -26,13 +65,27 @@ export function MangaCover({ uri, style, fallbackText = "No Cover", resizeMode =
     );
   }
 
+  const shimmerTranslateX = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-140, 220],
+  });
+
   return (
-    <View style={style}>
+    <View style={[style, styles.container]}>
       {loading ? (
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-          <View style={styles.loading} />
+        <View pointerEvents="none" style={styles.loadingOverlay}>
+          <View style={styles.loadingBase} />
+          <Animated.View
+            style={[
+              styles.shimmer,
+              {
+                transform: [{ translateX: shimmerTranslateX }],
+              },
+            ]}
+          />
         </View>
       ) : null}
+
       <Image
         source={{ uri }}
         style={StyleSheet.absoluteFill}
@@ -52,6 +105,9 @@ export function MangaCover({ uri, style, fallbackText = "No Cover", resizeMode =
 }
 
 const styles = StyleSheet.create({
+  container: {
+    overflow: "hidden",
+  },
   placeholder: {
     backgroundColor: colors.surfaceElevated,
     alignItems: "center",
@@ -63,8 +119,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
   },
-  loading: {
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+    backgroundColor: colors.surfaceElevated,
+  },
+  loadingBase: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.surfaceElevated,
+  },
+  shimmer: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: 90,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    transform: [{ skewX: "-18deg" }],
   },
 });
