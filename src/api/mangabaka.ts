@@ -3,6 +3,7 @@ import { getCached, setCached } from "../storage/cache";
 
 const API_URL = "https://api.mangabaka.org/v1";
 const REQUEST_TIMEOUT = 10000;
+const chapterInfoInFlight = new Map<string, Promise<{ totalChapters?: number; source: "MangaBaka" }>>();
 
 async function fetchMangaBaka(url: string) {
   const controller = new AbortController();
@@ -50,7 +51,10 @@ export async function getChapterInfo(manga: Pick<Manga, "id" | "title" | "altTit
   const key = `chapter-info.${manga.id}`;
   const cached = await getCached<{ totalChapters?: number; source: "MangaBaka" }>(key);
   if (cached) return cached;
+  const existing = chapterInfoInFlight.get(key);
+  if (existing) return existing;
 
+  const request = (async () => {
   const queries = [manga.title, ...(manga.altTitles ?? [])].filter(Boolean);
   for (const query of queries) {
     const params = new URLSearchParams({ q: query, limit: "10" });
@@ -70,4 +74,11 @@ export async function getChapterInfo(manga: Pick<Manga, "id" | "title" | "altTit
   const result = { source: "MangaBaka" as const };
   await setCached(key, result);
   return result;
+  })();
+  chapterInfoInFlight.set(key, request);
+  try {
+    return await request;
+  } finally {
+    chapterInfoInFlight.delete(key);
+  }
 }
