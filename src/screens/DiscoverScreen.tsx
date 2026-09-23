@@ -1,4 +1,4 @@
-import React,{useCallback,useEffect,useMemo,useState} from "react";
+import React,{useCallback,useEffect,useState} from "react";
 import {FlatList,Pressable,RefreshControl,StyleSheet,Text,TextInput,View} from "react-native";
 import {getCompletedMangaPage,getLatestMangaPage,getOngoingMangaPage,getPopularMangaPage,getTags,searchMangaPage} from "../api/anilist";
 import {MangaCard} from "../components/MangaCard";
@@ -12,9 +12,7 @@ type Props=NativeStackScreenProps<DiscoverStackParamList,"DiscoverHome">;
 type Filter="popular"|"latest"|"ongoing"|"completed";
 type Tag={id:string;name:string};
 const filters:Filter[]=["popular","latest","ongoing","completed"];
-const GenreChip=React.memo(function GenreChip({item,active,onPress}:{item:Tag;active:boolean;onPress:(item:Tag)=>void}){
- return <Pressable onPress={()=>onPress(item)} style={[styles.genreChip,active&&styles.active]}><Text style={styles.chipText}>{item.name}</Text></Pressable>;
-});
+
 
 export function DiscoverScreen({navigation}:Props){
  const[manga,setManga]=useState<Manga[]>([]);
@@ -86,8 +84,6 @@ export function DiscoverScreen({navigation}:Props){
   void load(query,filter,g);
  },[load,query,filter]);
 
- const genreItems=useMemo(()=>[{id:"",name:"All"},...tags],[tags]);
-
  const handleMangaPress=useCallback((selected:Manga)=>{
   navigation.navigate("MangaDetail",{manga:selected});
  },[navigation]);
@@ -97,10 +93,6 @@ export function DiscoverScreen({navigation}:Props){
  ),[handleMangaPress]);
 
  const keyExtractor=useCallback((item:Manga)=>item.id,[]);
- const genreKeyExtractor=useCallback((item:Tag)=>item.id||"all",[]);
- const renderGenreItem=useCallback(({item}:{item:Tag})=>(
-  <GenreChip item={item} active={genre?.id===item.id||(item.id===""&&!genre)} onPress={chooseGenre}/>
- ),[chooseGenre,genre]);
 
  const handleRefresh=useCallback(()=>{
   void load(query,filter,genre,true);
@@ -119,7 +111,7 @@ export function DiscoverScreen({navigation}:Props){
    <Text style={styles.filterLabel}>Sort & status</Text>
    <View style={styles.filters}>{filters.map(f=><Pressable key={f} onPress={()=>{setFilter(f);void load(query,f,genre)}} style={[styles.chip,filter===f&&styles.active]}><Text style={styles.chipText}>{f}</Text></Pressable>)}</View>
    <Text style={styles.filterLabel}>Genre</Text>
-   <FlatList horizontal data={genreItems} extraData={genre?.id} keyExtractor={genreKeyExtractor} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.genreList} renderItem={renderGenreItem}/>
+   <FlatList horizontal data={[{id:"",name:"All"},...tags]} extraData={genre?.id} keyExtractor={x=>x.id||"all"} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.genreList} renderItem={({item})=><Pressable onPress={()=>chooseGenre(item.id?item:undefined)} style={[styles.genreChip,(genre?.id===item.id||(item.id===""&&!genre))&&styles.active]}><Text style={styles.chipText}>{item.name}</Text></Pressable>}/>
   </View>
   {error&&manga.length===0
    ?<View style={styles.center}><Text style={styles.error}>{error}</Text><Pressable onPress={()=>void load(query,filter,genre)} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View>
