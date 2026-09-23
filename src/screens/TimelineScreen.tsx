@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useState} from "react";
-import {FlatList,Pressable,RefreshControl,ScrollView,StyleSheet,Text,View} from "react-native";
+import {Pressable,RefreshControl,ScrollView,SectionList,StyleSheet,Text,View} from "react-native";
 import {colors,radius,spacing} from "../constants/theme";
 import {TimelineSkeleton} from "../components/TimelineSkeleton";
 import {getActivity,getLibrary} from "../storage/library";
@@ -7,7 +7,7 @@ import type {ActivityEvent,LibraryEntry} from "../types/models";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { TimelineStackParamList } from "../navigation/TimelineStackNavigator";
 
-type Props=NativeStackScreenProps<TimelineStackParamList,"TimelineHome">;
+type Props=NativeStackScreenProps<TimelineStackParamList,"TimelineHome">;\ntype TimelineRow={\n kind:"entry";\n entry:LibraryEntry;\n}|{\n kind:"activity";\n event:ActivityEvent;\n};
 
 export function TimelineScreen({navigation}:Props){
  const[entries,setEntries]=useState<LibraryEntry[]>([]);const[activity,setActivity]=useState<ActivityEvent[]>([]);const[refreshing,setRefreshing]=useState(false);const[loading,setLoading]=useState(true);
@@ -16,7 +16,7 @@ export function TimelineScreen({navigation}:Props){
  const refresh=async()=>{setRefreshing(true);await load();setRefreshing(false)};
  const reading=entries.filter(e=>e.readingStatus==="reading");const completed=entries.filter(e=>e.readingStatus==="completed");const plan=entries.filter(e=>e.readingStatus==="plan_to_read");const total=entries.length;const progress=total?Math.round((completed.length/total)*100):0;
  if(loading)return <ScrollView style={styles.container}><TimelineSkeleton/></ScrollView>;
- const sections=[
+ const sections:{title:string;empty:string;data:TimelineRow[]}[]=[
   {title:"Continue Reading",empty:"No manhwa currently marked as Reading.",data:reading.map(entry=>({kind:"entry" as const,entry}))},
   {title:"Plan to Read",empty:"Nothing queued yet.",data:plan.map(entry=>({kind:"entry" as const,entry}))},
   ...(completed.length>0?[{title:"Completed",empty:"",data:completed.slice(0,5).map(entry=>({kind:"entry" as const,entry}))}]:[]),
